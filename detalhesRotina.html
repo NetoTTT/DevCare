@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes da Rotina</title>
+</head>
+<body>
+    <h1>Detalhes da Sua Rotina</h1>
+
+    <div id="routine-details">
+        <p>Carregando detalhes...</p>
+    </div>
+
+    <button onclick="window.location.href = '/web_siite/login.html'">Voltar</button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDC2WhGePbcE58oGDIYQAi7zz8qp4FiIls",
+            authDomain: "devcareweb.firebaseapp.com",
+            projectId: "devcareweb",
+            storageBucket: "devcareweb.firebasestorage.app",
+            messagingSenderId: "774221694310",
+            appId: "1:774221694310:web:07f7fbe7ac0993e1f5f4a7",
+            measurementId: "G-HM1HVRF7NS"
+        };
+
+        // Inicializando Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Função para carregar os detalhes da rotina
+        async function loadRoutineDetails(user) {
+            if (user) {
+                const userId = user.uid;  // Pega o UID do usuário autenticado
+                const userRef = doc(db, "RotinasUsers", userId);
+                const userDoc = await getDoc(userRef);
+
+                if (userDoc.exists()) {
+                    const routine = userDoc.data().routine;
+                    document.getElementById('routine-details').innerHTML = `
+                        <h2>Sua Rotina: ${routine}</h2>
+                        <p>Esses são os detalhes completos da sua rotina, que incluem aspectos importantes como... (adicione os detalhes específicos)</p>
+                    `;
+                } else {
+                    console.log("Usuário não tem rotina registrada.");
+                    alert("Não conseguimos encontrar sua rotina.");
+                }
+            } else {
+                console.log("Usuário não autenticado.");
+                alert("Você precisa estar logado para acessar esta página.");
+                window.location.href = "/web_siite/FormLogin.html";  // Redireciona para login se não autenticado
+            }
+        }
+
+        // Função de logout
+        async function logout() {
+            try {
+                await signOut(auth);
+                alert("Você foi deslogado com sucesso!");
+                window.location.href = "/web_siite/FormLogin.html";  // Redireciona para a página de login
+            } catch (error) {
+                console.error("Erro ao sair:", error.message);
+                alert("Erro ao sair, tente novamente.");
+            }
+        }
+
+        // Usar onAuthStateChanged para garantir que o usuário esteja autenticado
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuário autenticado, carregar os detalhes da rotina
+                loadRoutineDetails(user);
+            } else {
+                // Usuário não autenticado, redireciona para login
+                console.log("Usuário não autenticado.");
+                alert("Você precisa estar logado para acessar esta página.");
+                window.location.href = "/web_siite/FormLogin.html";
+            }
+        });
+    </script>
+</body>
+</html>
