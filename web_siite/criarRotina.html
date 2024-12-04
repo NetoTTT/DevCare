@@ -143,7 +143,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
-
+    
         // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDC2WhGePbcE58oGDIYQAi7zz8qp4FiIls",
@@ -154,96 +154,112 @@
             appId: "1:774221694310:web:07f7fbe7ac0993e1f5f4a7",
             measurementId: "G-HM1HVRF7NS"
         };
-
+    
         // Inicializando Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
+    
         // Monitorar o estado de autenticação
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // O usuário está autenticado, você pode redirecionar para a página principal ou dashboard
                 console.log(`Usuário logado: ${user.displayName}`);
-
                 const userId = user.uid;
                 // Verifica se o usuário já tem uma rotina registrada
                 await checkUserRoutine(userId);
             } else {
-                // O usuário não está autenticado
                 console.log("Usuário não autenticado");
                 alert("Você precisa estar logado para acessar esta página.");
                 window.location.href = "/web_siite/FormLogin.html"; // Redireciona para a página de login
             }
         });
-
-        // Função para salvar as respostas e rotina no Firestore
-        async function saveQuizResponse(userId, answer6, routine) {
+    
+        // Função para salvar as respostas e rotina no Firestore, incluindo o tempo
+        async function saveQuizResponse(userId, answer6, routine, notificationTime) {
             const userRef = doc(db, "RotinasUsers", userId); // Salva dentro da coleção RotinasUsers
             await setDoc(userRef, {
                 answer_6: answer6,
-                routine: routine
+                routine: routine,
+                notificationTime: notificationTime
             });
         }
-
-        // Função para determinar a rotina baseada na resposta da pergunta 6
-        function determineRoutine(answer6) {
+    
+        // Função para determinar a rotina baseada na resposta da pergunta 6 e os intervalos de notificação
+        function determineRoutineAndTime(answer6) {
+            let routine = "";
+            let notificationTime = 0; // Intervalo em horas
+    
             switch (answer6) {
                 case "Pressão e prazos apertados":
-                    return "Rotina A";
+                    routine = "Rotina A";
+                    notificationTime = 1;  // Notificação a cada 1 hora
+                    break;
                 case "Cultura de trabalho de longas horas":
-                    return "Rotina B";
+                    routine = "Rotina B";
+                    notificationTime = 2;  // Notificação a cada 2 horas
+                    break;
                 case "Isolamento e falta de interação social":
-                    return "Rotina C";
+                    routine = "Rotina C";
+                    notificationTime = 3;  // Notificação a cada 3 horas
+                    break;
                 case "Falta de controle sobre o trabalho":
-                    return "Rotina D";
+                    routine = "Rotina D";
+                    notificationTime = 4;  // Notificação a cada 4 horas
+                    break;
                 case "Ambiente competitivo e rápido avanço da tecnologia, fazendo-o(a) sentir-se atrasado":
-                    return "Rotina E";
+                    routine = "Rotina E";
+                    notificationTime = 5;  // Notificação a cada 5 horas
+                    break;
                 case "Falta de reconhecimento e feedback positivo":
-                    return "Rotina F";
+                    routine = "Rotina F";
+                    notificationTime = 6;  // Notificação a cada 6 horas
+                    break;
                 default:
-                    return "Sem rotina definida";
+                    routine = "Sem rotina definida";
+                    notificationTime = 0;
+                    break;
             }
+    
+            return { routine, notificationTime };
         }
-
+    
         // Função para verificar se o usuário já tem uma rotina registrada
         async function checkUserRoutine(userId) {
             const userRef = doc(db, "RotinasUsers", userId);
             const userDoc = await getDoc(userRef);
-
+    
             if (userDoc.exists()) {
                 // Se o documento for encontrado, redireciona para bloqRotina.html
                 window.location.href = "/bloqRotina.html";
             }
         }
-
+    
         // Evento de envio do formulário
         document.getElementById('quiz-form').addEventListener('submit', async function (event) {
             event.preventDefault();
-
-            // Obtendo o ID do usuário autenticado
+    
             const user = auth.currentUser;
-
+    
             if (user) {
                 const userId = user.uid;  // Pega o UID do usuário autenticado
-
                 const answer6 = document.getElementById('work_situation').value;
-                const routine = determineRoutine(answer6);
-
-                // Salva as respostas e rotina no Firestore
-                await saveQuizResponse(userId, answer6, routine);
-
+    
+                // Determina a rotina e o tempo de notificação com base na resposta
+                const { routine, notificationTime } = determineRoutineAndTime(answer6);
+    
+                // Salva as respostas, rotina e o tempo de notificação no Firestore
+                await saveQuizResponse(userId, answer6, routine, notificationTime);
+    
                 // Feedback para o usuário
                 const feedback = document.getElementById('feedback');
-                feedback.textContent = 'Obrigado por responder! Sua rotina é: ' + routine;
+                feedback.textContent = `Obrigado por responder! Sua rotina é: ${routine}. Você será notificado a cada ${notificationTime} horas.`;
             } else {
-                // Se o usuário não estiver autenticado
                 console.log("Usuário não autenticado.");
                 alert("Você precisa estar logado para responder.");
             }
         });
     </script>
-
+    
 
 </body>
 
